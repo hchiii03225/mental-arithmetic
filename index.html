@@ -201,11 +201,12 @@
     }
 
     .timer-badge {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 700;
       color: #334155;
       font-variant-numeric: tabular-nums;
       margin-left: auto;
+      white-space: nowrap;
     }
 
     .progress-track {
@@ -443,7 +444,7 @@
         <span class="timer-badge" id="practice-timer">0.0 秒</span>
       </div>
 
-      <!-- 3秒倒數減少條 -->
+      <!-- 3秒倒數時間減少條 -->
       <div class="progress-track">
         <div id="practice-progress-bar" class="progress-fill"></div>
       </div>
@@ -477,7 +478,7 @@
         <div class="header-btns">
           <button class="btn-pill" onclick="exitHostMode()">退出</button>
         </div>
-        <span class="timer-badge" id="host-timer">120 秒</span>
+        <span class="timer-badge" id="host-timer">自動換題倒數：120 秒</span>
       </div>
 
       <div class="progress-track">
@@ -574,7 +575,6 @@
       }
     }
 
-    // 啟動 3 秒倒數時間減少條
     function start3SecCountdown() {
       isCountingDown3Sec = true;
       countdownStart = performance.now();
@@ -600,7 +600,6 @@
       }, 25);
     }
 
-    // 正式啟動心算耗時計時（此時時間條保持 0%）
     function startCalculationTimer() {
       isTimingStarted = true;
       document.getElementById('practice-progress-bar').style.width = '0%';
@@ -614,7 +613,6 @@
       }, 50);
     }
 
-    // 切換隱藏題目開關
     function toggleHideSetting() {
       autoHideEnabled = !autoHideEnabled;
       const btn = document.getElementById('toggle-hide-btn');
@@ -623,7 +621,6 @@
         btn.className = 'toggle-pill enabled';
         btn.innerHTML = '<span>●</span> 隱藏題目功能：開啟';
         
-        // 若此時已經進入計時階段（表示 3 秒早過），立即隱藏題目
         if (isTimingStarted) {
           document.getElementById('practice-formula').innerHTML = '<span class="formula-masked">題目已隱藏</span>';
         }
@@ -631,11 +628,9 @@
         btn.className = 'toggle-pill';
         btn.innerHTML = '<span>○</span> 隱藏題目功能：關閉';
 
-        // 關閉時題目立即顯現
         if (practiceCurrent) {
           document.getElementById('practice-formula').textContent = `${practiceCurrent.num1} + ${practiceCurrent.num2}`;
         }
-        // 如果還在 3 秒倒數中，直接結束倒數進度條並啟動計時
         if (isCountingDown3Sec) {
           clearInterval(countdownInterval);
           isCountingDown3Sec = false;
@@ -701,7 +696,6 @@
         }, 450);
 
       } else {
-        // 答錯閃淡紅，計時持續進行
         document.body.classList.add('flash-wrong');
         statusMsg.className = 'status-msg error';
         statusMsg.textContent = '計算錯誤，請再試一次！';
@@ -795,7 +789,7 @@
     }
 
     function updateHostTimerDisplay() {
-      document.getElementById('host-timer').textContent = `${hostTimeLeft} 秒`;
+      document.getElementById('host-timer').textContent = `自動換題倒數：${hostTimeLeft} 秒`;
       let pct = (hostTimeLeft / 120) * 100;
       document.getElementById('host-progress-bar').style.width = `${pct}%`;
     }
