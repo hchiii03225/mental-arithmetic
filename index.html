@@ -10,8 +10,7 @@
       --card-bg: #ffffff;
       --text-main: #0f172a;
       --text-muted: #64748b;
-      --primary: #4338ca;
-      --primary-hover: #3730a3;
+      --primary: #4f46e5;
       --border: #e2e8f0;
       --correct-flash: rgba(34, 197, 94, 0.25);
       --wrong-flash: rgba(239, 68, 68, 0.25);
@@ -220,10 +219,10 @@
 
     .progress-fill {
       height: 100%;
-      background: #6366f1;
-      width: 0%;
+      background: #4f46e5;
+      width: 100%;
       border-radius: 999px;
-      transition: width 0.1s linear;
+      transition: width 0.05s linear;
     }
 
     .toggle-bar {
@@ -299,7 +298,7 @@
     }
 
     .input-field:focus {
-      border-color: #6366f1;
+      border-color: #4f46e5;
     }
 
     .status-msg {
@@ -325,7 +324,7 @@
       border-radius: 12px;
       border: none;
       cursor: pointer;
-      background-color: #6366f1;
+      background-color: #4f46e5;
       color: white;
       transition: all 0.15s ease;
     }
@@ -363,13 +362,13 @@
     }
 
     .btn-nav-primary {
-      background: #6366f1;
+      background: #4f46e5;
       color: #ffffff;
-      border-color: #6366f1;
+      border-color: #4f46e5;
     }
 
     .btn-nav-primary:hover {
-      background: #4f46e5;
+      background: #4338ca;
     }
 
     .result-list {
@@ -444,6 +443,7 @@
         <span class="timer-badge" id="practice-timer">0.0 秒</span>
       </div>
 
+      <!-- 3秒倒數減少條 -->
       <div class="progress-track">
         <div id="practice-progress-bar" class="progress-fill"></div>
       </div>
@@ -531,12 +531,14 @@
     let practiceCurrent = null;
     let practiceElapsed = 0;
     let practiceTimerInterval = null;
-    let practiceInitial3SecTimer = null;
+    let countdownInterval = null;
+    let isCountingDown3Sec = false;
     let isTimingStarted = false;
     let isPaused = false;
     let autoHideEnabled = true;
     let completedHistory = [];
     let timingStartTime = 0;
+    let countdownStart = 0;
 
     function startPracticeMode() {
       completedHistory = [];
@@ -546,16 +548,16 @@
 
     function nextPracticeQuestion() {
       clearInterval(practiceTimerInterval);
-      clearTimeout(practiceInitial3SecTimer);
+      clearInterval(countdownInterval);
 
       practiceCurrent = generateHard3DigitMath();
       practiceElapsed = 0;
       isTimingStarted = false;
+      isCountingDown3Sec = false;
       isPaused = false;
 
       document.getElementById('btn-pause').textContent = '暫停';
       document.getElementById('practice-timer').textContent = '0.0 秒';
-      document.getElementById('practice-progress-bar').style.width = '0%';
       document.getElementById('practice-formula').textContent = `${practiceCurrent.num1} + ${practiceCurrent.num2}`;
 
       const input = document.getElementById('answer-input');
@@ -565,44 +567,78 @@
       document.getElementById('status-message').textContent = '';
 
       if (autoHideEnabled) {
-        // 前 3 秒只看題目，不計時、不跑條
-        practiceInitial3SecTimer = setTimeout(() => {
-          document.getElementById('practice-formula').innerHTML = '<span class="formula-masked">題目已隱藏</span>';
-          startCalculationTimer();
-        }, 3000);
+        start3SecCountdown();
       } else {
+        document.getElementById('practice-progress-bar').style.width = '0%';
         startCalculationTimer();
       }
     }
 
+    // 啟動 3 秒倒數時間減少條
+    function start3SecCountdown() {
+      isCountingDown3Sec = true;
+      countdownStart = performance.now();
+      const pBar = document.getElementById('practice-progress-bar');
+      pBar.style.width = '100%';
+
+      countdownInterval = setInterval(() => {
+        if (!isPaused) {
+          let elapsed = performance.now() - countdownStart;
+          let remaining = 3000 - elapsed;
+          if (remaining <= 0) {
+            clearInterval(countdownInterval);
+            pBar.style.width = '0%';
+            isCountingDown3Sec = false;
+            if (autoHideEnabled) {
+              document.getElementById('practice-formula').innerHTML = '<span class="formula-masked">題目已隱藏</span>';
+            }
+            startCalculationTimer();
+          } else {
+            pBar.style.width = `${(remaining / 3000) * 100}%`;
+          }
+        }
+      }, 25);
+    }
+
+    // 正式啟動心算耗時計時（此時時間條保持 0%）
     function startCalculationTimer() {
       isTimingStarted = true;
+      document.getElementById('practice-progress-bar').style.width = '0%';
       timingStartTime = performance.now();
+
       practiceTimerInterval = setInterval(() => {
         if (!isPaused) {
           practiceElapsed = (performance.now() - timingStartTime) / 1000;
           document.getElementById('practice-timer').textContent = `${practiceElapsed.toFixed(1)} 秒`;
-          // 時間條跟著往前跑 (以 20 秒為進度滿格參考，持續前進)
-          let pct = Math.min((practiceElapsed / 20) * 100, 100);
-          document.getElementById('practice-progress-bar').style.width = `${pct}%`;
         }
       }, 50);
     }
 
+    // 切換隱藏題目開關
     function toggleHideSetting() {
       autoHideEnabled = !autoHideEnabled;
       const btn = document.getElementById('toggle-hide-btn');
+
       if (autoHideEnabled) {
         btn.className = 'toggle-pill enabled';
         btn.innerHTML = '<span>●</span> 隱藏題目功能：開啟';
+        
+        // 若此時已經進入計時階段（表示 3 秒早過），立即隱藏題目
+        if (isTimingStarted) {
+          document.getElementById('practice-formula').innerHTML = '<span class="formula-masked">題目已隱藏</span>';
+        }
       } else {
         btn.className = 'toggle-pill';
         btn.innerHTML = '<span>○</span> 隱藏題目功能：關閉';
-        clearTimeout(practiceInitial3SecTimer);
+
+        // 關閉時題目立即顯現
         if (practiceCurrent) {
           document.getElementById('practice-formula').textContent = `${practiceCurrent.num1} + ${practiceCurrent.num2}`;
         }
-        if (!isTimingStarted) {
+        // 如果還在 3 秒倒數中，直接結束倒數進度條並啟動計時
+        if (isCountingDown3Sec) {
+          clearInterval(countdownInterval);
+          isCountingDown3Sec = false;
           startCalculationTimer();
         }
       }
@@ -617,7 +653,6 @@
         btn.textContent = '繼續';
         btn.classList.add('btn-pill-active');
         input.disabled = true;
-        clearTimeout(practiceInitial3SecTimer);
       } else {
         isPaused = false;
         btn.textContent = '暫停';
@@ -627,8 +662,10 @@
 
         if (isTimingStarted) {
           timingStartTime = performance.now() - (practiceElapsed * 1000);
-        } else {
-          startCalculationTimer();
+        } else if (isCountingDown3Sec) {
+          let currentPct = parseFloat(document.getElementById('practice-progress-bar').style.width) || 0;
+          let remainingMs = (currentPct / 100) * 3000;
+          countdownStart = performance.now() - (3000 - remainingMs);
         }
       }
     }
@@ -645,7 +682,7 @@
 
       if (val === practiceCurrent.ans) {
         clearInterval(practiceTimerInterval);
-        clearTimeout(practiceInitial3SecTimer);
+        clearInterval(countdownInterval);
 
         completedHistory.push({
           num1: practiceCurrent.num1,
@@ -678,7 +715,7 @@
 
     function endPractice() {
       clearInterval(practiceTimerInterval);
-      clearTimeout(practiceInitial3SecTimer);
+      clearInterval(countdownInterval);
 
       showView('view-result');
       const list = document.getElementById('result-items');
@@ -703,7 +740,7 @@
 
     function goHomeFromPractice() {
       clearInterval(practiceTimerInterval);
-      clearTimeout(practiceInitial3SecTimer);
+      clearInterval(countdownInterval);
       showView('view-menu');
     }
 
