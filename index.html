@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>三位數加法 心算練習</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #4338ca;
+      --primary-hover: #3730a3;
+      --border: #e2e8f0;
+      --correct-flash: rgba(34, 197, 94, 0.25);
+      --wrong-flash: rgba(239, 68, 68, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      transition: background-color 0.25s ease;
+    }
+
+    body.flash-correct {
+      background-color: var(--correct-flash);
+    }
+
+    body.flash-wrong {
+      background-color: var(--wrong-flash);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+      padding: 32px 24px;
+      position: relative;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .main-title {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 28px;
+      text-align: center;
+      color: #0f172a;
+    }
+
+    .menu-vertical-group {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .mode-card-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-card {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px 20px;
+      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-card:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+      transform: translateY(-1px);
+    }
+
+    .btn-card:active {
+      transform: scale(0.98);
+    }
+
+    .btn-card-host {
+      border-color: #e0e7ff;
+    }
+
+    .btn-card-host:hover {
+      border-color: #c7d2fe;
+      background: #f5f7ff;
+    }
+
+    .btn-card-practice {
+      border-color: #dcfce7;
+    }
+
+    .btn-card-practice:hover {
+      border-color: #bbf7d0;
+      background: #f2fcf5;
+    }
+
+    .card-icon {
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-text {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .mode-desc-list {
+      list-style-type: disc;
+      padding-left: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mode-desc-list li {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    .header-controls {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .header-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-pill {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid var(--border);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-pill:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .btn-pill:active {
+      transform: scale(0.96);
+    }
+
+    .btn-pill-active {
+      background: #e0e7ff;
+      border-color: #c7d2fe;
+      color: #4338ca;
+    }
+
+    .timer-badge {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #334155;
+      font-variant-numeric: tabular-nums;
+      margin-left: auto;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: #f1f5f9;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #6366f1;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.1s linear;
+    }
+
+    .toggle-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+
+    .toggle-pill {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+
+    .toggle-pill.enabled {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #2563eb;
+    }
+
+    .formula-display {
+      font-size: 2.3rem;
+      font-weight: 800;
+      min-height: 84px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      letter-spacing: 0.5px;
+      color: #0f172a;
+    }
+
+    .formula-masked {
+      background-color: #f1f5f9;
+      color: #94a3b8;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: normal;
+    }
+
+    .answer-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .input-field {
+      width: 100%;
+      font-size: 2.1rem;
+      text-align: center;
+      padding: 12px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      outline: none;
+      margin: 18px 0 10px;
+      font-weight: 700;
+      transition: border-color 0.2s;
+    }
+
+    .input-field:focus {
+      border-color: #6366f1;
+    }
+
+    .status-msg {
+      min-height: 24px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+    }
+
+    .status-msg.error {
+      color: #ef4444;
+    }
+
+    .status-msg.success {
+      color: #22c55e;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      background-color: #6366f1;
+      color: white;
+      transition: all 0.15s ease;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    .nav-two-btns {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      margin-top: 32px;
+    }
+
+    .btn-nav {
+      flex: 1;
+      padding: 13px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-nav:hover {
+      background: #f8fafc;
+    }
+
+    .btn-nav:active {
+      transform: scale(0.98);
+    }
+
+    .btn-nav-primary {
+      background: #6366f1;
+      color: #ffffff;
+      border-color: #6366f1;
+    }
+
+    .btn-nav-primary:hover {
+      background: #4f46e5;
+    }
+
+    .result-list {
+      width: 100%;
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 12px;
+      margin: 16px 0 20px;
+      list-style: none;
+    }
+
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 4px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.95rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .result-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 首頁選單 -->
+    <div id="view-menu" class="view active">
+      <h1 class="main-title">三位數加法 心算練習</h1>
+      
+      <div class="menu-vertical-group">
+        <!-- 出題模式 (在上) -->
+        <div class="mode-card-section">
+          <button class="btn-card btn-card-host" onclick="startHostMode()">
+            <span class="card-icon">🎯</span>
+            <span class="card-text">出題模式</span>
+          </button>
+          <ul class="mode-desc-list">
+            <li>供考官使用。</li>
+            <li>每兩分鐘自動更新題目。</li>
+            <li>可檢閱上/下一題題目。</li>
+          </ul>
+        </div>
+
+        <!-- 答題模式 (在下) -->
+        <div class="mode-card-section">
+          <button class="btn-card btn-card-practice" onclick="startPracticeMode()">
+            <span class="card-icon">⚡</span>
+            <span class="card-text">答題模式</span>
+          </button>
+          <ul class="mode-desc-list">
+            <li>自我挑戰心算速度。</li>
+            <li>為擬真考試狀況，預設三秒後隱藏題目。</li>
+            <li>隱藏功能可由按鈕關閉或開啟。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 答題模式 -->
+    <div id="view-practice" class="view">
+      <div class="header-controls">
+        <div class="header-btns">
+          <button id="btn-pause" class="btn-pill" onclick="togglePause()">暫停</button>
+          <button class="btn-pill" onclick="endPractice()">結算</button>
+          <button class="btn-pill" onclick="goHomeFromPractice()">回首頁</button>
+        </div>
+        <span class="timer-badge" id="practice-timer">0.0 秒</span>
+      </div>
+
+      <div class="progress-track">
+        <div id="practice-progress-bar" class="progress-fill"></div>
+      </div>
+
+      <div class="toggle-bar">
+        <button id="toggle-hide-btn" class="toggle-pill enabled" onclick="toggleHideSetting()">
+          <span id="hide-status-dot">●</span> 隱藏題目功能：開啟
+        </button>
+      </div>
+
+      <div class="formula-display" id="practice-formula">-- + --</div>
+
+      <form class="answer-form" onsubmit="submitAnswer(event)">
+        <input type="number" inputmode="numeric" id="answer-input" class="input-field" placeholder="輸入答案" autocomplete="off">
+        <div id="status-message" class="status-msg"></div>
+        <button type="submit" id="btn-submit-ans" class="btn-submit">送出答案</button>
+      </form>
+    </div>
+
+    <!-- 答題結果結算 -->
+    <div id="view-result" class="view">
+      <h2 style="font-size: 1.5rem; margin-bottom: 8px;">練習成果</h2>
+      <p id="result-summary" style="font-size: 0.95rem; color: var(--text-muted);"></p>
+      <ul id="result-items" class="result-list"></ul>
+      <button class="btn-submit" onclick="showView('view-menu')">回到首頁</button>
+    </div>
+
+    <!-- 出題模式 -->
+    <div id="view-host" class="view">
+      <div class="header-controls">
+        <div class="header-btns">
+          <button class="btn-pill" onclick="exitHostMode()">退出</button>
+        </div>
+        <span class="timer-badge" id="host-timer">120 秒</span>
+      </div>
+
+      <div class="progress-track">
+        <div id="host-progress-bar" class="progress-fill" style="width: 100%;"></div>
+      </div>
+
+      <div class="formula-display" id="host-formula">-- + -- = --</div>
+
+      <div class="nav-two-btns">
+        <button class="btn-nav" onclick="prevHostQuestion()">回上一題</button>
+        <button class="btn-nav btn-nav-primary" onclick="nextHostQuestion()">跳下一題</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 高進位三位數出題核心 (至少 2 次進位) ---
+    function countCarries(a, b) {
+      let carries = 0;
+      let carry = 0;
+      while (a > 0 || b > 0) {
+        let sum = (a % 10) + (b % 10) + carry;
+        if (sum >= 10) {
+          carries++;
+          carry = 1;
+        } else {
+          carry = 0;
+        }
+        a = Math.floor(a / 10);
+        b = Math.floor(b / 10);
+      }
+      return carries;
+    }
+
+    function generateHard3DigitMath() {
+      while (true) {
+        let n1 = Math.floor(Math.random() * 900) + 100;
+        let n2 = Math.floor(Math.random() * 900) + 100;
+        if (countCarries(n1, n2) >= 2) {
+          return { num1: n1, num2: n2, ans: n1 + n2 };
+        }
+      }
+    }
+
+    function showView(viewId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+    }
+
+    // --- 答題模式邏輯 ---
+    let practiceCurrent = null;
+    let practiceElapsed = 0;
+    let practiceTimerInterval = null;
+    let practiceInitial3SecTimer = null;
+    let isTimingStarted = false;
+    let isPaused = false;
+    let autoHideEnabled = true;
+    let completedHistory = [];
+    let timingStartTime = 0;
+
+    function startPracticeMode() {
+      completedHistory = [];
+      showView('view-practice');
+      nextPracticeQuestion();
+    }
+
+    function nextPracticeQuestion() {
+      clearInterval(practiceTimerInterval);
+      clearTimeout(practiceInitial3SecTimer);
+
+      practiceCurrent = generateHard3DigitMath();
+      practiceElapsed = 0;
+      isTimingStarted = false;
+      isPaused = false;
+
+      document.getElementById('btn-pause').textContent = '暫停';
+      document.getElementById('practice-timer').textContent = '0.0 秒';
+      document.getElementById('practice-progress-bar').style.width = '0%';
+      document.getElementById('practice-formula').textContent = `${practiceCurrent.num1} + ${practiceCurrent.num2}`;
+
+      const input = document.getElementById('answer-input');
+      input.value = '';
+      input.disabled = false;
+      input.focus();
+      document.getElementById('status-message').textContent = '';
+
+      if (autoHideEnabled) {
+        // 前 3 秒只看題目，不計時、不跑條
+        practiceInitial3SecTimer = setTimeout(() => {
+          document.getElementById('practice-formula').innerHTML = '<span class="formula-masked">題目已隱藏</span>';
+          startCalculationTimer();
+        }, 3000);
+      } else {
+        startCalculationTimer();
+      }
+    }
+
+    function startCalculationTimer() {
+      isTimingStarted = true;
+      timingStartTime = performance.now();
+      practiceTimerInterval = setInterval(() => {
+        if (!isPaused) {
+          practiceElapsed = (performance.now() - timingStartTime) / 1000;
+          document.getElementById('practice-timer').textContent = `${practiceElapsed.toFixed(1)} 秒`;
+          // 時間條跟著往前跑 (以 20 秒為進度滿格參考，持續前進)
+          let pct = Math.min((practiceElapsed / 20) * 100, 100);
+          document.getElementById('practice-progress-bar').style.width = `${pct}%`;
+        }
+      }, 50);
+    }
+
+    function toggleHideSetting() {
+      autoHideEnabled = !autoHideEnabled;
+      const btn = document.getElementById('toggle-hide-btn');
+      if (autoHideEnabled) {
+        btn.className = 'toggle-pill enabled';
+        btn.innerHTML = '<span>●</span> 隱藏題目功能：開啟';
+      } else {
+        btn.className = 'toggle-pill';
+        btn.innerHTML = '<span>○</span> 隱藏題目功能：關閉';
+        clearTimeout(practiceInitial3SecTimer);
+        if (practiceCurrent) {
+          document.getElementById('practice-formula').textContent = `${practiceCurrent.num1} + ${practiceCurrent.num2}`;
+        }
+        if (!isTimingStarted) {
+          startCalculationTimer();
+        }
+      }
+    }
+
+    function togglePause() {
+      const btn = document.getElementById('btn-pause');
+      const input = document.getElementById('answer-input');
+
+      if (!isPaused) {
+        isPaused = true;
+        btn.textContent = '繼續';
+        btn.classList.add('btn-pill-active');
+        input.disabled = true;
+        clearTimeout(practiceInitial3SecTimer);
+      } else {
+        isPaused = false;
+        btn.textContent = '暫停';
+        btn.classList.remove('btn-pill-active');
+        input.disabled = false;
+        input.focus();
+
+        if (isTimingStarted) {
+          timingStartTime = performance.now() - (practiceElapsed * 1000);
+        } else {
+          startCalculationTimer();
+        }
+      }
+    }
+
+    function submitAnswer(e) {
+      e.preventDefault();
+      if (isPaused) return;
+
+      const input = document.getElementById('answer-input');
+      const val = parseInt(input.value.trim(), 10);
+      const statusMsg = document.getElementById('status-message');
+
+      if (isNaN(val)) return;
+
+      if (val === practiceCurrent.ans) {
+        clearInterval(practiceTimerInterval);
+        clearTimeout(practiceInitial3SecTimer);
+
+        completedHistory.push({
+          num1: practiceCurrent.num1,
+          num2: practiceCurrent.num2,
+          ans: practiceCurrent.ans,
+          time: practiceElapsed
+        });
+
+        document.body.classList.add('flash-correct');
+        statusMsg.className = 'status-msg success';
+        statusMsg.textContent = '正確！';
+
+        setTimeout(() => {
+          document.body.classList.remove('flash-correct');
+          nextPracticeQuestion();
+        }, 450);
+
+      } else {
+        // 答錯閃淡紅，計時持續進行
+        document.body.classList.add('flash-wrong');
+        statusMsg.className = 'status-msg error';
+        statusMsg.textContent = '計算錯誤，請再試一次！';
+        input.select();
+
+        setTimeout(() => {
+          document.body.classList.remove('flash-wrong');
+        }, 350);
+      }
+    }
+
+    function endPractice() {
+      clearInterval(practiceTimerInterval);
+      clearTimeout(practiceInitial3SecTimer);
+
+      showView('view-result');
+      const list = document.getElementById('result-items');
+      list.innerHTML = '';
+
+      if (completedHistory.length === 0) {
+        document.getElementById('result-summary').textContent = '未完成任何題目。';
+        return;
+      }
+
+      let totalSec = completedHistory.reduce((acc, cur) => acc + cur.time, 0);
+      let avgSec = (totalSec / completedHistory.length).toFixed(1);
+      document.getElementById('result-summary').textContent = `共完成 ${completedHistory.length} 題，平均耗時 ${avgSec} 秒`;
+
+      completedHistory.forEach((item, idx) => {
+        let li = document.createElement('li');
+        li.className = 'result-item';
+        li.innerHTML = `<span>第 ${idx + 1} 題：${item.num1} + ${item.num2} = ${item.ans}</span><span>${item.time.toFixed(1)} 秒</span>`;
+        list.appendChild(li);
+      });
+    }
+
+    function goHomeFromPractice() {
+      clearInterval(practiceTimerInterval);
+      clearTimeout(practiceInitial3SecTimer);
+      showView('view-menu');
+    }
+
+    // --- 出題模式邏輯 ---
+    let hostQuestions = [];
+    let hostIndex = -1;
+    let hostAutoTimer = null;
+    let hostTimeLeft = 120;
+
+    function startHostMode() {
+      hostQuestions = [];
+      hostIndex = -1;
+      showView('view-host');
+      nextHostQuestion();
+    }
+
+    function renderHostQuestion() {
+      let q = hostQuestions[hostIndex];
+      document.getElementById('host-formula').textContent = `${q.num1} + ${q.num2} = ${q.ans}`;
+      resetHost2MinTimer();
+    }
+
+    function nextHostQuestion() {
+      if (hostIndex < hostQuestions.length - 1) {
+        hostIndex++;
+      } else {
+        hostQuestions.push(generateHard3DigitMath());
+        hostIndex++;
+      }
+      renderHostQuestion();
+    }
+
+    function prevHostQuestion() {
+      if (hostIndex > 0) {
+        hostIndex--;
+        renderHostQuestion();
+      }
+    }
+
+    function resetHost2MinTimer() {
+      clearInterval(hostAutoTimer);
+      hostTimeLeft = 120;
+      updateHostTimerDisplay();
+
+      hostAutoTimer = setInterval(() => {
+        hostTimeLeft--;
+        updateHostTimerDisplay();
+        if (hostTimeLeft <= 0) {
+          nextHostQuestion();
+        }
+      }, 1000);
+    }
+
+    function updateHostTimerDisplay() {
+      document.getElementById('host-timer').textContent = `${hostTimeLeft} 秒`;
+      let pct = (hostTimeLeft / 120) * 100;
+      document.getElementById('host-progress-bar').style.width = `${pct}%`;
+    }
+
+    function exitHostMode() {
+      clearInterval(hostAutoTimer);
+      showView('view-menu');
+    }
+  </script>
+</body>
+</html>
